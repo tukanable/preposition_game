@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Игра — Выбери предлог (English Prepositions)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: Inter, Roboto, Arial, sans-serif; background:#0f1724; color:#e6eef8; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
+    .card { width:760px; max-width:95%; background:#0b1220; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.6); padding:28px; }
+    h1 { margin:0 0 10px 0; font-size:20px; color:#dff1ff; }
+    .score { font-weight:700; color:#9be7a2; }
+    .sentence { font-size:20px; margin:18px 0; background:linear-gradient(90deg,#081224,#071226); padding:14px; border-radius:8px; }
+    .opts { display:flex; gap:10px; margin-top:14px; }
+    .opt { flex:1; padding:12px; border-radius:8px; background:#071226; border:1px solid rgba(255,255,255,0.03); text-align:center; cursor:pointer; user-select:none; transition:transform .08s ease, background .12s ease; }
+    .opt:hover { transform:translateY(-3px); }
+    .opt.correct { background:linear-gradient(90deg,#073b22,#0a7a49); color:#eafff0; border-color:rgba(0,0,0,0.2); }
+    .opt.wrong { background:linear-gradient(90deg,#3b0d1e,#6a1a2c); color:#fff1f1; border-color:rgba(0,0,0,0.2); }
+    .hint { margin-top:8px; color:#9fb6d2; font-size:13px; }
+    .controls { display:flex; justify-content:space-between; align-items:center; margin-top:18px; gap:12px; }
+    .btn { padding:8px 12px; border-radius:8px; background:#0a2b4a; border:1px solid rgba(255,255,255,0.03); cursor:pointer; color:#dff1ff; }
+    .small { font-size:13px; color:#bcd6ee; }
+    .resetFlash { color:#ffb4b4; font-weight:700; }
+    footer { margin-top:12px; font-size:12px; color:#95b0cf; }
+    .kbd { background:#0b2030; padding:6px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.03); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Игра — Выбери предлог</h1>
+    <div class="small">Выберите правильный предлог. Ошибка = сброс и начало заново. Клавиши <span class="kbd">1</span>, <span class="kbd">2</span>, <span class="kbd">3</span>.</div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">
+      <div>Текущий прогресс: <span id="progressNum">0</span>/<span id="total">0</span></div>
+      <div>Максимум: <span id="best" class="score">0</span></div>
+    </div>
+
+    <div id="sentence" class="sentence">Загрузка...</div>
+    <div id="options" class="opts"></div>
+    <div id="hint" class="hint"></div>
+    <div id="message" style="margin-top:12px;"></div>
+
+    <div class="controls">
+      <button id="restartBtn" class="btn">Начать заново</button>
+    </div>
+
+    <footer>Добавляйте свои примеры в массив <code>QUESTIONS</code> в коде. Прогресс и максимум сохраняются в localStorage.</footer>
+  </div>
+
+  <script>
+  const QUESTIONS = [
+    {before:"I will meet you",hint:"— cafe",correct:"at",options:["in","at","on"],after:"the cafe."},
+    {before:"She put the book",hint:"",correct:"on",options:["over","in","on"],after:"the table."},
+    {before:"He lives",hint:"— London",correct:"in",options:["at","in","on"],after:"London."},
+    {before:"This letter is addressed",hint:"",correct:"to",options:["for","to","at"],after:"you."},
+    {before:"She apologized",hint:"",correct:"for",options:["about","for","to"],after:"the mistake."},
+    {before:"They laughed",hint:"",correct:"at",options:["about","at","to"],after:"the joke."},
+    {before:"I am interested",hint:"",correct:"in",options:["about","in","on"],after:"history."},
+    {before:"He succeeded",hint:"",correct:"in",options:["at","in","on"],after:"finishing the project."},
+    {before:"She divided the cake",hint:"",correct:"into",options:["between","into","among"],after:"four pieces."},
+    {before:"The cat jumped",hint:"",correct:"onto",options:["into","onto","over"],after:"the roof."},
+    {before:"I walked",hint:"",correct:"through",options:["across","through","over"],after:"the forest."},
+    {before:"They discussed it",hint:"",correct:"during",options:["while","during","for"],after:"the meeting."},
+    {before:"Keep calm",hint:"",correct:"under",options:["on","under","in"],after:"pressure."},
+    {before:"She is responsible",hint:"",correct:"for",options:["to","for","with"],after:"the team."},
+    {before:"He was born",hint:"",correct:"on",options:["in","on","at"],after:"June 5th."},
+    {before:"She is good",hint:"",correct:"at",options:["in","at","with"],after:"painting."},
+    {before:"They are proud",hint:"",correct:"of",options:["for","of","about"],after:"their son."},
+    {before:"The picture is made",hint:"",correct:"of",options:["from","of","by"],after:"wood."},
+    {before:"He looked",hint:"",correct:"for",options:["at","for","after"],after:"his keys."}
+  ];
+
+  let index = 0;
+  let best = parseInt(localStorage.getItem('bestPrepositions') || '0', 10);
+
+  const totalEl = document.getElementById('total');
+  const progressEl = document.getElementById('progressNum');
+  const bestEl = document.getElementById('best');
+  const sentenceEl = document.getElementById('sentence');
+  const optionsEl = document.getElementById('options');
+  const hintEl = document.getElementById('hint');
+  const messageEl = document.getElementById('message');
+  const restartBtn = document.getElementById('restartBtn');
+
+  totalEl.textContent = QUESTIONS.length;
+  bestEl.textContent = best;
+
+  function render() {
+    const q = QUESTIONS[index];
+    progressEl.textContent = index;
+    sentenceEl.textContent = q.before + " ____ " + q.after;
+    hintEl.textContent = q.hint ? "Контекст: " + q.hint : "";
+    optionsEl.innerHTML = '';
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement('div');
+      btn.className = 'opt';
+      btn.textContent = opt;
+      btn.addEventListener('click', () => choose(opt, btn));
+      optionsEl.appendChild(btn);
+    });
+  }
+
+  function choose(opt, btnEl) {
+    const q = QUESTIONS[index];
+    Array.from(optionsEl.children).forEach(n=>n.style.pointerEvents='none');
+    if (opt === q.correct) {
+      btnEl.classList.add('correct');
+      index++;
+      if (index > best) {
+        best = index;
+        localStorage.setItem('bestPrepositions', best);
+      }
+      bestEl.textContent = best;
+      messageEl.textContent = 'Правильно!';
+      if (index >= QUESTIONS.length) {
+        messageEl.textContent = 'Поздравляем! Вы прошли все вопросы.';
+        index = 0;
+        setTimeout(()=>{ render(); }, 1000);
+      } else {
+        setTimeout(()=>{ render(); }, 500);
+      }
+    } else {
+      btnEl.classList.add('wrong');
+      messageEl.innerHTML = '<span class="resetFlash">Ошибка! Счёт сброшен.</span>';
+      setTimeout(()=>{ index = 0; render(); }, 800);
+    }
+  }
+
+  restartBtn.addEventListener('click', ()=>{
+    index = 0;
+    render();
+    messageEl.textContent = '';
+  });
+
+  window.addEventListener('keydown', (e)=>{
+    if(['1','2','3'].includes(e.key)){
+      const i = parseInt(e.key,10)-1;
+      const opt = optionsEl.children[i];
+      if(opt) opt.click();
+    }
+  });
+
+  render();
+  </script>
+</body>
+</html>
