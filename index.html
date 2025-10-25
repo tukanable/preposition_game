@@ -4,6 +4,12 @@
   <meta charset="utf-8" />
   <title>Choose the Preposition — игра</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="Игра для изучения предлогов английского языка" />
+  <meta name="theme-color" content="#071026" />
+  <link rel="manifest" href="/preposition_game/manifest.json" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/preposition_game/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/preposition_game/icon-512.png" />
+  <link rel="apple-touch-icon" href="/preposition_game/icon-192.png" />
   <style>
     :root{
       --bg:#071026; --card:#0b1220; --muted:#9fb6d2; --accent:#8ee6a4; --bad:#ff9b9b;
@@ -285,6 +291,21 @@ const observer = new MutationObserver(() => {
 });
 observer.observe(optionsEl, { childList: true });
 
+</script>
+
+<script>
+// Register Service Worker for PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/preposition_game/sw.js')
+      .then((registration) => {
+        console.log('Service Worker registered:', registration.scope);
+      })
+      .catch((error) => {
+        console.log('Service Worker registration failed:', error);
+      });
+  });
+}
 </script>
 </body>
 </html>
