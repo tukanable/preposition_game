@@ -1,8 +1,9 @@
-const CACHE_NAME = 'preposition-game-v1';
+const CACHE_NAME = 'preposition-game-v2';
 const urlsToCache = [
   '/preposition_game/',
   '/preposition_game/index.html',
-  '/preposition_game/questions.js'
+  '/preposition_game/questions.js',
+  '/preposition_game/questions2.js'
 ];
 
 // Install service worker and cache resources
