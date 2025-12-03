@@ -19,6 +19,7 @@
     .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:28px}
     .card{width:100%;max-width:500px;background:var(--card);border-radius:12px;padding:22px;box-shadow:0 10px 40px rgba(2,6,12,0.6)}
     h1{margin:0;font-size:20px;color:#dff1ff}
+    .header-row{display:flex;align-items:center;gap:12px}
     .meta{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:12px}
     .small{color:var(--muted);font-size:13px}
     .status{display:flex;gap:16px;align-items:center}
@@ -38,6 +39,8 @@
     .repeatBtn{background:#144b6a}
     footer{margin-top:12px;color:var(--muted);font-size:13px}
     .kbd{background:#0b2030;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.03);font-size:13px}
+    .level-select{background:#08324f;color:#dff1ff;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:4px 8px;font-size:13px;cursor:pointer}
+    .level-select:focus{outline:none;border-color:var(--accent)}
     @media(max-width:540px){ .options{flex-direction:column} .card{padding:14px} .sentence{font-size:18px} }
     .opt:focus {
       outline: none;
@@ -58,7 +61,13 @@
 <body>
   <div class="wrap">
     <div class="card" role="application" aria-label="Choose the Preposition game">
-      <h1>Choose the Preposition</h1>
+      <div class="header-row">
+        <h1>Choose the Preposition</h1>
+        <select id="levelSelect" class="level-select">
+          <option value="questions.js">Level 1</option>
+          <option value="questions2.js">Level 2</option>
+        </select>
+      </div>
 
       <div class="meta">
         <div class="small">Use mouse or keys <span class="kbd">1</span> <span class="kbd">2</span> <span class="kbd">3</span> <span class="kbd">Space</span></div>
@@ -101,8 +110,14 @@
 /* ====== State ====== */
 let index = 0;                // текущий индекс вопроса (0..len-1)
 let score = 0;                // текущая серия правильных подряд (для best)
-const total = QUESTIONS.length;
-const BEST_KEY = 'preposition_game_best';
+let questions = QUESTIONS;    // текущий набор вопросов
+let total = questions.length;
+let currentLevel = 'questions.js';
+const LEVEL_KEY = 'preposition_game_level';
+
+function getBestKey(level) {
+  return 'preposition_game_best_' + level;
+}
 
 /* ====== Elements ====== */
 const sentenceEl = document.getElementById('sentence');
@@ -117,10 +132,11 @@ const tipExplain = document.getElementById('tipExplain');
 const repeatBtn = document.getElementById('repeatBtn');
 const progressBarsEl = document.getElementById('progressBars');
 const progressCenterEl = document.getElementById('progressCenter');
+const levelSelect = document.getElementById('levelSelect');
 
 /* ====== Init UI ====== */
 totalEl.textContent = total;
-let best = parseInt(localStorage.getItem(BEST_KEY) || '0', 10);
+let best = parseInt(localStorage.getItem(getBestKey(currentLevel)) || '0', 10);
 bestEl.textContent = best;
 
 // Initialize 100 progress bars in a circle
@@ -131,8 +147,6 @@ for(let i = 0; i < 100; i++){
   bar.style.transform = `rotate(${angle}deg)`;
   progressBarsEl.appendChild(bar);
 }
-
-render();
 
 /* ====== Shuffle helper ====== */
 function shuffle(arr){
@@ -177,7 +191,7 @@ function resetProgressBars(){
 
 /* ====== Render question (with shuffling) ====== */
 function render(){
-  const q = QUESTIONS[index];
+  const q = questions[index];
   // show progress: how many reached now (score) or show index? User wanted "до какого предложения добрался сейчас"
   // We'll show index (how many answered before current) — i.e., score is number of consecutive correct answers.
   progressEl.textContent = score;
@@ -206,7 +220,7 @@ function choose(option, el){
   if(!canAnswer) return; // prevent answering when locked
   canAnswer = false; // lock immediately
 
-  const q = QUESTIONS[index];
+  const q = questions[index];
   if(option === q.correct){
     // correct
     el.classList.add('correct');
@@ -215,7 +229,7 @@ function choose(option, el){
     // update best if needed
     if(score > best){
       best = score;
-      localStorage.setItem(BEST_KEY, String(best));
+      localStorage.setItem(getBestKey(currentLevel), String(best));
       bestEl.textContent = best;
     } else {
       bestEl.textContent = best;
@@ -290,6 +304,45 @@ const observer = new MutationObserver(() => {
   if(first) first.focus();
 });
 observer.observe(optionsEl, { childList: true });
+
+/* ====== Load level dynamically ====== */
+function loadLevel(levelFile) {
+  const script = document.createElement('script');
+  script.src = levelFile;
+  script.onload = () => {
+    currentLevel = levelFile;
+    questions = QUESTIONS;
+    total = questions.length;
+    totalEl.textContent = total;
+    best = parseInt(localStorage.getItem(getBestKey(currentLevel)) || '0', 10);
+    bestEl.textContent = best;
+    index = 0;
+    score = 0;
+    canAnswer = true;
+    updateProgressBars();
+    render();
+  };
+  document.head.appendChild(script);
+}
+
+/* ====== Level select handler ====== */
+levelSelect.addEventListener('change', (e) => {
+  const selectedLevel = e.target.value;
+  localStorage.setItem(LEVEL_KEY, selectedLevel);
+  loadLevel(selectedLevel);
+});
+
+/* ====== Restore saved level on load ====== */
+const savedLevel = localStorage.getItem(LEVEL_KEY);
+if (savedLevel) {
+  levelSelect.value = savedLevel;
+  if (savedLevel !== 'questions.js') {
+    loadLevel(savedLevel);
+  }
+}
+
+/* ====== Initial render ====== */
+render();
 
 </script>
 

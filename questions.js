@@ -1,5 +1,5 @@
 /* ====== QUESTIONS: English Q/A, tip на русском (индивидуально) ====== */
-const QUESTIONS = [
+var QUESTIONS = [
   { before: "I live", after: "Moscow.", correct: "in", options: ["in","at","on"],
     tip: "In — для городов и стран. Не 'at Moscow'.",
     tipExplain: "Русскоговорящие часто говорят 'at' по аналогии с 'у' — запомни: in Moscow, in Russia." },
